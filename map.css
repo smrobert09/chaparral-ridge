@@ -1,0 +1,37 @@
+@page {
+  size: A4 landscape;
+}
+@page {
+  /* width height: 11in 8.5in for landscape letter */
+  size: 14in 8.5in;
+  margin: 0.5in;
+}
+
+
+h1 {
+  text-align: center;
+  margin-bottom: 0.2in;
+}
+
+#d3-root{
+  width: 14in;
+  height: 8.5in;
+  border: 1px solid #ddd;
+  margin-top: 12px;
+  padding: 6px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+@media print {
+  body {
+    margin: 0;
+  }
+  h1 {
+    display: none;
+  }
+  #d3-root {
+    border: none;
+    box-shadow: none;
+  }
+}
