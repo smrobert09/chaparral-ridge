@@ -43,7 +43,6 @@ function layout() {
     const scaleX = renderWidth / iw;
     const scaleY = renderHeight / ih;
 
-    svg.attr("viewBox", `0 0 ${sw} ${sh}`);
     mapGroup.selectAll("*").remove();
 
     mapGroup.append("image")
