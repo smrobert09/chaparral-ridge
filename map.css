@@ -14,13 +14,18 @@ h1 {
 }
 
 #d3-root{
-  width: 14in;
-  height: 8.5in;
+  width: 100%;
+  height: calc(100vh - 80px);
   border: 1px solid #ddd;
   margin-top: 12px;
   padding: 6px;
   background: #fff;
   box-sizing: border-box;
+  cursor: grab;
+}
+
+#d3-root:active {
+  cursor: grabbing;
 }
 
 @media print {
@@ -31,7 +36,10 @@ h1 {
     display: none;
   }
   #d3-root {
+    width: 14in;
+    height: 8.5in;
     border: none;
     box-shadow: none;
+    cursor: default;
   }
 }
