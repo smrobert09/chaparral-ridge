@@ -65,6 +65,8 @@ function layout() {
                 .attr("font-size", Math.max(8, renderWidth * 0.008))
                 .attr("fill", "#222")
                 .attr("font-family", "sans-serif")
+                .attr("text-anchor", "middle")
+                .attr("dominant-baseline", "middle")
                 .attr("paint-order", "stroke")
                 .style("text-shadow", "0 0 2px rgba(255,255,255,0.8)");
         }
