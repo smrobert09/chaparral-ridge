@@ -3,12 +3,11 @@ const DATA_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR4pqUIjZlED4n
 const root = d3.select("#d3-root");
 root.selectAll("*").remove();
 
-const svg = root
-    .append("svg")
-    .attr("width", "100%")
-    .attr("height", "100%");
+const svg = root.append("svg").attr("width", "100%").attr("height", "100%");
 
-// All map content lives in this group so zoom transforms everything together
+// Invisible rect ensures the full SVG area captures scroll/drag events for zoom
+svg.append("rect").attr("width", "100%").attr("height", "100%").attr("fill", "none").attr("pointer-events", "all");
+
 const mapGroup = svg.append("g");
 
 const zoom = d3.zoom()
@@ -19,91 +18,84 @@ const zoom = d3.zoom()
 
 svg.call(zoom);
 
-async function renderImage(imgSrc) {
-    const img = new Image();
-    img.src = imgSrc;
-    img.onload = async () => {
-        const iw = img.naturalWidth;
-        const ih = img.naturalHeight;
+let cachedImg = null;
+let cachedRows = null;
 
-        const rect = root.node().getBoundingClientRect();
-        const sw = rect.width;
-        const sh = rect.height;
+function layout() {
+    if (!cachedImg || !cachedRows) return;
 
-        const imageAspect = iw / ih;
+    const iw = cachedImg.naturalWidth;
+    const ih = cachedImg.naturalHeight;
+    const rect = root.node().getBoundingClientRect();
+    const sw = rect.width;
+    const sh = rect.height;
 
-        let renderWidth = sw;
-        let renderHeight = renderWidth / imageAspect;
-        if (renderHeight > sh) {
-            renderHeight = sh;
-            renderWidth = renderHeight * imageAspect;
+    const aspect = iw / ih;
+    let renderWidth = sw;
+    let renderHeight = renderWidth / aspect;
+    if (renderHeight > sh) {
+        renderHeight = sh;
+        renderWidth = renderHeight * aspect;
+    }
+
+    const imgX = (sw - renderWidth) / 2;
+    const imgY = (sh - renderHeight) / 2;
+    const scaleX = renderWidth / iw;
+    const scaleY = renderHeight / ih;
+
+    svg.attr("viewBox", `0 0 ${sw} ${sh}`);
+    mapGroup.selectAll("*").remove();
+
+    mapGroup.append("image")
+        .attr("href", cachedImg.src)
+        .attr("x", imgX)
+        .attr("y", imgY)
+        .attr("width", renderWidth)
+        .attr("height", renderHeight)
+        .attr("preserveAspectRatio", "xMidYMid meet");
+
+    cachedRows.forEach((r) => {
+        const fx = parseFloat(r["X"]);
+        const fy = parseFloat(r["Y"]);
+        const name = (r["Family Name"] || "").trim();
+        if (!isNaN(fx) && !isNaN(fy) && name) {
+            mapGroup.append("text")
+                .attr("x", imgX + fx * scaleX)
+                .attr("y", imgY + fy * scaleY)
+                .text(name)
+                .attr("font-size", 6)
+                .attr("fill", "#222")
+                .attr("font-family", "sans-serif")
+                .attr("paint-order", "stroke")
+                .style("text-shadow", "0 0 2px rgba(255,255,255,0.8)");
         }
-
-        const imgX = (sw - renderWidth) / 2;
-        const imgY = (sh - renderHeight) / 2;
-
-        svg.attr("viewBox", `0 0 ${sw} ${sh}`);
-
-        mapGroup.selectAll("*").remove();
-
-        mapGroup
-            .append("image")
-            .attr("href", imgSrc)
-            .attr("x", imgX)
-            .attr("y", imgY)
-            .attr("width", renderWidth)
-            .attr("height", renderHeight)
-            .attr("preserveAspectRatio", "xMidYMid meet");
-
-        const scaleX = renderWidth / iw;
-        const scaleY = renderHeight / ih;
-
-        const rows = await d3.csv(DATA_URL);
-        let placed = 0;
-        let skipped = 0;
-        rows.forEach((r) => {
-            const fx = r["X"] ? parseFloat(r["X"]) : NaN;
-            const fy = r["Y"] ? parseFloat(r["Y"]) : NaN;
-            const name = (r["Family Name"] || "").trim();
-            if (!isNaN(fx) && !isNaN(fy) && name) {
-                const tx = imgX + fx * scaleX;
-                const ty = imgY + fy * scaleY;
-
-                mapGroup
-                    .append("text")
-                    .attr("x", tx)
-                    .attr("y", ty)
-                    .text(name)
-                    .attr("font-size", 6)
-                    .attr("fill", "#222")
-                    .attr("font-family", "sans-serif")
-                    .attr("paint-order", "stroke")
-                    .style("text-shadow", "0 0 2px rgba(255,255,255,0.8)");
-
-                placed += 1;
-            } else {
-                skipped += 1;
-            }
-        });
-        console.log(`placed ${placed} labels, skipped ${skipped} rows`);
-    };
-    img.onerror = () => {
-        mapGroup
-            .append("text")
-            .attr("x", 12)
-            .attr("y", 40)
-            .text("Failed to load Ward Map.png")
-            .attr("fill", "red");
-    };
+    });
 }
 
-renderImage("Ward Map.png");
+async function init() {
+    const [img, rows] = await Promise.all([
+        new Promise((resolve, reject) => {
+            const i = new Image();
+            i.onload = () => resolve(i);
+            i.onerror = reject;
+            i.src = "Ward Map.png";
+        }),
+        d3.csv(DATA_URL),
+    ]);
+    cachedImg = img;
+    cachedRows = rows;
+    layout();
+}
+
+init().catch(() => {
+    mapGroup.append("text").attr("x", 12).attr("y", 40).text("Failed to load Ward Map.png").attr("fill", "red");
+});
 
 let resizeTimer = null;
 window.addEventListener("resize", () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
         svg.call(zoom.transform, d3.zoomIdentity);
-        renderImage("Ward Map.png");
+        layout();
     }, 150);
 });
