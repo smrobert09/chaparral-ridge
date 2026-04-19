@@ -40,9 +40,6 @@ function layout() {
 
     const imgX = (sw - renderWidth) / 2;
     const imgY = (sh - renderHeight) / 2;
-    const scaleX = renderWidth / iw;
-    const scaleY = renderHeight / ih;
-
     mapGroup.selectAll("*").remove();
 
     mapGroup.append("image")
@@ -59,8 +56,8 @@ function layout() {
         const name = (r["Family Name"] || "").trim();
         if (!isNaN(fx) && !isNaN(fy) && name) {
             mapGroup.append("text")
-                .attr("x", imgX + fx * scaleX)
-                .attr("y", imgY + fy * scaleY)
+                .attr("x", imgX + (fx / 100) * renderWidth)
+                .attr("y", imgY + (fy / 100) * renderHeight)
                 .text(name)
                 .attr("font-size", 6)
                 .attr("fill", "#222")
