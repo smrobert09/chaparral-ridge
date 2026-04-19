@@ -40,6 +40,9 @@ function layout() {
 
     const imgX = (sw - renderWidth) / 2;
     const imgY = (sh - renderHeight) / 2;
+    const scaleX = renderWidth / iw;
+    const scaleY = renderHeight / ih;
+
     mapGroup.selectAll("*").remove();
 
     mapGroup.append("image")
@@ -59,7 +62,7 @@ function layout() {
                 .attr("x", imgX + (fx / 100) * renderWidth)
                 .attr("y", imgY + (fy / 100) * renderHeight)
                 .text(name)
-                .attr("font-size", 6)
+                .attr("font-size", Math.max(8, renderWidth * 0.008))
                 .attr("fill", "#222")
                 .attr("font-family", "sans-serif")
                 .attr("paint-order", "stroke")
